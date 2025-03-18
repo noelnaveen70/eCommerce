@@ -735,11 +735,13 @@ const SellerDashboard = () => {
                       </div>
                       
                       {product.image && (
-                        <img 
-                          src={getImageUrl(product.image)} 
-                          alt={product.name} 
-                          className="w-full h-40 object-cover rounded-md mb-3"
-                        />
+                        <div className="w-full h-40 flex items-center justify-center overflow-hidden rounded-md mb-3 bg-gray-50 dark:bg-gray-700/30">
+                          <img 
+                            src={getImageUrl(product.image)} 
+                            alt={product.name} 
+                            className="max-w-full max-h-40 object-contain"
+                          />
+                        </div>
                       )}
                       <div className="flex justify-between items-start">
                         <div>
@@ -945,11 +947,13 @@ const SellerDashboard = () => {
                     >
                       {(productFormData.imagePreview || productFormData.image) ? (
                         <div className="relative w-full">
-                          <img 
-                            src={productFormData.imagePreview || getImageUrl(productFormData.image)} 
-                            alt="Product preview" 
-                            className="mx-auto h-48 object-contain mb-2"
-                          />
+                          <div className="flex items-center justify-center bg-gray-50 dark:bg-gray-700/30 rounded-md mb-2 p-2">
+                            <img 
+                              src={productFormData.imagePreview || getImageUrl(productFormData.image)} 
+                              alt="Product preview" 
+                              className="max-h-48 object-contain"
+                            />
+                          </div>
                           <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
                             Click to change image
                           </p>

@@ -7,6 +7,21 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     
+    // Basic validations
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and password are required'
+      });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+    
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -16,7 +31,7 @@ exports.register = async (req, res) => {
       });
     }
     
-    // Create new user
+    // Create new user with password
     const user = await User.create({
       name,
       email,
@@ -27,20 +42,41 @@ exports.register = async (req, res) => {
     // Generate token
     const token = user.generateAuthToken();
     
+    // Remove password from response
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar
+    };
+    
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar
-      }
+      user: userResponse
     });
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle specific validation errors
+    if (error.name === 'ValidationError') {
+      const messages = {};
+      
+      // Extract specific validation error messages
+      for (const field in error.errors) {
+        messages[field] = error.errors[field].message;
+      }
+      
+      // Return the specific validation error messages
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: messages
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error registering user',
@@ -58,7 +94,7 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password'
+        message: 'Please provide both email and password'
       });
     }
     
@@ -68,7 +104,7 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'No account found with this email address'
       });
     }
     
@@ -78,7 +114,7 @@ exports.login = async (req, res) => {
     if (!isPasswordMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Incorrect password'
       });
     }
     
@@ -99,9 +135,19 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Handle specific error types
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid login data',
+        error: error.message
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error logging in',
+      message: 'Login failed. Please try again later.',
       error: error.message
     });
   }

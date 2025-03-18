@@ -3,31 +3,18 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    const uploadDir = 'uploads/products';
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function(req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'product-' + uniqueSuffix + ext);
-  }
-});
+// Configure multer storage for temporary file upload
+const storage = multer.memoryStorage(); // Use memory storage instead of disk
 
 // File filter for images
 const fileFilter = (req, file, cb) => {
-  // Accept only jpg/jpeg files
-  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+  // Accept image files
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG/JPEG image files are allowed'), false);
+    cb(new Error('Only image files are allowed'), false);
   }
 };
 
@@ -159,9 +146,37 @@ exports.createProduct = async (req, res) => {
     // Add seller ID from authenticated user
     req.body.seller = req.user._id;
     
-    // If file was uploaded, add the file path to the product data
+    // If file was uploaded, upload it to Cloudinary
     if (req.file) {
-      req.body.image = req.file.path.replace(/\\/g, '/'); // Normalize path for all OS
+      try {
+        // Convert buffer to data URL
+        const dataURI = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(dataURI, {
+          folder: 'handcraft/products',
+          resource_type: 'image'
+        });
+        
+        // Add the Cloudinary URL to the product data
+        req.body.image = result.secure_url;
+        console.log('Image uploaded to Cloudinary:', result.secure_url);
+      } catch (cloudinaryError) {
+        console.error('Cloudinary upload error:', cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error uploading image to Cloudinary',
+          error: cloudinaryError.message
+        });
+      }
+    } else {
+      // If no image was provided and it's required
+      if (!req.body.image) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product image is required'
+        });
+      }
     }
     
     const product = await Product.create(req.body);
@@ -201,13 +216,29 @@ exports.updateProduct = async (req, res) => {
       });
     }
     
-    // If file was uploaded, update the image path
+    // If file was uploaded, update the image on Cloudinary
     if (req.file) {
-      // Delete old image if it exists
-      if (product.image && fs.existsSync(product.image)) {
-        fs.unlinkSync(product.image);
+      try {
+        // Convert buffer to data URL
+        const dataURI = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(dataURI, {
+          folder: 'handcraft/products',
+          resource_type: 'image'
+        });
+        
+        // Add the Cloudinary URL to the product data
+        req.body.image = result.secure_url;
+        console.log('Updated image uploaded to Cloudinary:', result.secure_url);
+      } catch (cloudinaryError) {
+        console.error('Cloudinary upload error during update:', cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error uploading image to Cloudinary',
+          error: cloudinaryError.message
+        });
       }
-      req.body.image = req.file.path.replace(/\\/g, '/');
     }
     
     // Update the product
@@ -255,12 +286,11 @@ exports.deleteProduct = async (req, res) => {
       });
     }
     
-    // Delete product image if it exists
-    if (product.image && fs.existsSync(product.image)) {
-      fs.unlinkSync(product.image);
-    }
+    // If using Cloudinary, no need to delete file from local storage
+    // The image URL will be preserved in Cloudinary for your records
     
-    await Product.findByIdAndDelete(req.params.id);
+    // Delete the product
+    await product.deleteOne();
     
     res.status(200).json({
       success: true,
@@ -276,7 +306,29 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// Add/Update product rating and review
+// Get seller products
+exports.getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.params.sellerId || req.user._id;
+    
+    const products = await Product.find({ seller: sellerId });
+    
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products
+    });
+  } catch (error) {
+    console.error('Error fetching seller products:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching seller products',
+      error: error.message
+    });
+  }
+};
+
+// Add product rating
 exports.addProductRating = async (req, res) => {
   try {
     const { rating, review } = req.body;
@@ -301,15 +353,15 @@ exports.addProductRating = async (req, res) => {
     }
     
     // Check if user has already rated this product
-    const existingRatingIndex = product.ratings.findIndex(
+    const existingRating = product.ratings.find(
       r => r.user.toString() === userId.toString()
     );
     
-    if (existingRatingIndex !== -1) {
+    if (existingRating) {
       // Update existing rating
-      product.ratings[existingRatingIndex].rating = rating;
-      product.ratings[existingRatingIndex].review = review || product.ratings[existingRatingIndex].review;
-      product.ratings[existingRatingIndex].date = Date.now();
+      existingRating.rating = rating;
+      existingRating.review = review || existingRating.review;
+      existingRating.date = Date.now();
     } else {
       // Add new rating
       product.ratings.push({
@@ -320,7 +372,7 @@ exports.addProductRating = async (req, res) => {
       });
     }
     
-    // Recalculate average rating
+    // Calculate average rating
     product.calculateAverageRating();
     
     await product.save();
@@ -328,8 +380,7 @@ exports.addProductRating = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Rating added successfully',
-      averageRating: product.averageRating,
-      ratings: product.ratings
+      product
     });
   } catch (error) {
     console.error('Error adding rating:', error);
@@ -341,60 +392,20 @@ exports.addProductRating = async (req, res) => {
   }
 };
 
-// Get products by seller
-exports.getSellerProducts = async (req, res) => {
-  try {
-    console.log('getSellerProducts called');
-    console.log('User in request:', req.user ? `ID: ${req.user._id}, Role: ${req.user.role}` : 'No user in request');
-    
-    const sellerId = req.params.sellerId || req.user._id;
-    console.log('Using seller ID:', sellerId);
-    
-    const products = await Product.find({ seller: sellerId });
-    console.log(`Found ${products.length} products for seller ${sellerId}`);
-    
-    res.status(200).json({
-      success: true,
-      count: products.length,
-      products
-    });
-  } catch (error) {
-    console.error('Error fetching seller products:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching seller products',
-      error: error.message
-    });
-  }
-};
-
-// Get product categories with counts
+// Get product categories
 exports.getProductCategories = async (req, res) => {
   try {
-    const categories = await Product.aggregate([
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]);
+    const categories = await Product.distinct('category');
     
     res.status(200).json({
       success: true,
-      categories: categories.map(cat => ({
-        name: cat._id,
-        count: cat.count
-      }))
+      categories
     });
   } catch (error) {
-    console.error('Error fetching product categories:', error);
+    console.error('Error fetching categories:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching product categories',
+      message: 'Error fetching categories',
       error: error.message
     });
   }

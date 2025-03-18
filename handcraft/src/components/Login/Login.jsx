@@ -82,20 +82,58 @@ const Login = () => {
         navigate('/');
       }
     } catch (err) {
-      showSnackbar("Invalid login credentials", "error");
+      console.error("Login error:", err);
+      let errorMessage = "Invalid login credentials";
+      
+      if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      showSnackbar(errorMessage, "error");
     }
   };
   
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post("/api/auth/register", { username, email, password });
-      showSnackbar("Registration successful! Please login.", "success");
-      setUsername("");
-      setPassword("");
-      navigate("/login", { state: { registeredEmail: email } });
+      // Validate password length before sending to server
+      if (password.length < 6) {
+        showSnackbar("Password must be at least 6 characters", "error");
+        return;
+      }
+      
+      const response = await axiosInstance.post("/api/auth/register", { name: username, email, password });
+      if (response.data.token) {
+        setAuthToken(response.data.token, false);
+        window.dispatchEvent(new Event('loginStateChanged'));
+        showSnackbar("Registration successful! Please login.", "success");
+        setUsername("");
+        setPassword("");
+        navigate("/login", { state: { registeredEmail: email } });
+      }
     } catch (error) {
-      showSnackbar("Registration failed. Please try again.", "error");
+      console.error("Registration error:", error);
+      // Extract and display specific error message from the server response
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error.response && error.response.data) {
+        // Check for the new error format
+        if (error.response.data.errors && Object.keys(error.response.data.errors).length > 0) {
+          // Get the first validation error
+          const firstErrorKey = Object.keys(error.response.data.errors)[0];
+          errorMessage = error.response.data.errors[firstErrorKey];
+        }
+        // Check for message field
+        else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+        // Fall back to the error field
+        else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        }
+      }
+      
+      showSnackbar(errorMessage, "error");
     }
   };
 
