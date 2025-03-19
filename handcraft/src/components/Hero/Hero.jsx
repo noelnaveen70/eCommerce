@@ -4,59 +4,66 @@ import Image2 from "../../assets/hero/shopping.png";
 import Image3 from "../../assets/hero/sale.png";
 import Slider from "react-slick";
 import { Link, useLocation } from "react-router-dom";
-import { FaCaretDown, FaPaintBrush, FaTshirt, FaGem, FaMugHot } from "react-icons/fa";
-import { GiWoodenCrate, GiFlowerPot, GiTeapot } from "react-icons/gi";
+import { FaCaretDown, FaPaintBrush, FaTshirt, FaGem, FaMugHot, FaHome, FaGift, FaSoap, FaShoppingBag, FaPuzzlePiece } from "react-icons/fa";
+import { GiWoodenCrate, GiFlowerPot } from "react-icons/gi";
 
 // Define categories and subcategories with icons
 const ProductCategories = [
   { 
     id: 1, 
-    name: "Art", 
-    icon: <FaPaintBrush size={24} />,
-    link: "/products/art",
-    subcategories: ["Paintings", "Sculptures", "Folk Art", "Traditional Art", "Contemporary Art"]
+    name: "Home & Living", 
+    icon: <FaHome size={24} />,
+    link: "/products/home-living",
+    subcategories: ["Home Decor", "Bedding and Pillows", "Kitchen & Dining", "Storage & Organization"]
   },
   { 
     id: 2, 
     name: "Clothing", 
     icon: <FaTshirt size={24} />,
     link: "/products/clothing",
-    subcategories: ["Kurtas", "Sarees", "Dupattas", "Handwoven Fabrics", "Embroidered Apparel"]
+    subcategories: ["Shirt", "Saree", "Kurthi sets", "Pants", "Dhoti", "Dupatta"]
   },
   { 
     id: 3, 
-    name: "Ceramics", 
-    icon: <GiTeapot size={24} />,
-    link: "/products/ceramics",
-    subcategories: ["Pottery", "Vases", "Tableware", "Decorative Items", "Blue Pottery"]
+    name: "Handmade Gifts & Personalized Items", 
+    icon: <FaGift size={24} />,
+    link: "/products/handmade-gifts",
+    subcategories: ["Custom Nameplates & Signs", "Engraved Jewelry & Accessories", "Handmade Greeting Cards", "Photo Frames & Personalized Art"]
   },
   { 
     id: 4, 
     name: "Jewellery", 
     icon: <FaGem size={24} />,
     link: "/products/jewellery",
-    subcategories: ["Silver Jewellery", "Tribal Jewellery", "Beaded Jewellery", "Traditional Designs", "Contemporary Pieces"]
+    subcategories: ["Necklaces", "Earrings", "Bracelets", "Rings"]
   },
   { 
     id: 5, 
-    name: "Wooden Crafts", 
-    icon: <GiWoodenCrate size={24} />,
-    link: "/products/wooden",
-    subcategories: ["Furniture", "Decorative Items", "Kitchen Accessories", "Toys", "Wall Art"]
+    name: "Toys", 
+    icon: <FaPuzzlePiece size={24} />,
+    link: "/products/toys",
+    subcategories: ["Action Figures", "Educational Toys", "Stuffed Animals", "Puzzles"]
   },
   { 
     id: 6, 
-    name: "Clay Items", 
-    icon: <FaMugHot size={24} />,
-    link: "/products/clay",
-    subcategories: ["Terracotta", "Pottery", "Decorative Items", "Functional Items", "Sculptures"]
+    name: "Bath & Beauty", 
+    icon: <FaSoap size={24} />,
+    link: "/products/bath-beauty",
+    subcategories: ["Handmade Soaps", "Skincare Products", "Haircare Products", "Aromatherapy & Essential Oils"]
   },
   { 
     id: 7, 
-    name: "Handmade Decor", 
-    icon: <GiFlowerPot size={24} />,
-    link: "/products/decor",
-    subcategories: ["Wall Hangings", "Home Accessories", "Textiles", "Baskets & Storage", "Seasonal Decor"]
+    name: "Art", 
+    icon: <FaPaintBrush size={24} />,
+    link: "/products/art",
+    subcategories: ["Paintings & Drawings", "Sculptures", "Handmade Prints", "Handcrafted Cards & Stationery"]
+  },
+  { 
+    id: 8, 
+    name: "Accessories", 
+    icon: <FaShoppingBag size={24} />,
+    link: "/products/accessories",
+    subcategories: ["Bags & Purses", "Footwear", "Hats & Hair Accessories"]
   },
 ];
 
@@ -106,7 +113,7 @@ const Hero = ({ handleOrderPopup }) => {
     <div className="relative overflow-hidden min-h-[550px] sm:min-h-[650px] bg-gray-100 dark:bg-slate-950 dark:text-white duration-200">
       {/* Category Icons at top */}
       {isHomePage && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-white/40 backdrop-blur-sm dark:bg-gray-800/40 py-2">
+        <div className="absolute top-0 left-0 right-0 z-20 bg-transparent py-2">
           <div className="container mx-auto">
             <div className="flex items-center justify-around">
               {ProductCategories.map((category) => (

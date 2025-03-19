@@ -6,89 +6,86 @@ import { productService } from "../../services/api";
 
 // Category mapping for sidebar and display
 const categoryMapping = {
-  art: {
-    title: "Art",
+  'home-living': {
+    title: "Home & Living",
     sidebar: [
-      "All Art",
-      "Paintings",
-      "Sculptures",
-      "Folk Art",
-      "Traditional Art",
-      "Contemporary Art"
+      "Home Decor",
+      "Bedding and Pillows",
+      "Kitchen & Dining",
+      "Storage & Organization"
     ],
-    description: "Discover authentic handcrafted art pieces created by skilled artisans from across the country. Each piece tells a unique story and represents cultural heritage and traditional craftsmanship."
+    description: "Explore our collection of home and living products that enhance your space."
   },
   clothing: {
     title: "Clothing",
     sidebar: [
-      "All Clothing",
-      "Kurtas",
-      "Sarees",
-      "Dupattas",
-      "Handwoven Fabrics",
-      "Embroidered Apparel"
+      "Shirt",
+      "Saree",
+      "Kurthi sets",
+      "Pants",
+      "Dhoti",
+      "Dupatta"
     ],
-    description: "Explore our collection of handcrafted clothing made using traditional techniques. From hand-embroidered sarees to block-printed fabrics, each piece showcases the skill and artistry of our craftspeople."
+    description: "Discover our range of handcrafted clothing made with love."
   },
-  ceramics: {
-    title: "Ceramics",
+  'handmade-gifts': {
+    title: "Handmade Gifts & Personalized Items",
     sidebar: [
-      "All Ceramics",
-      "Pottery",
-      "Vases",
-      "Tableware",
-      "Decorative Items",
-      "Blue Pottery"
+      "Custom Nameplates & Signs",
+      "Engraved Jewelry & Accessories",
+      "Handmade Greeting Cards",
+      "Photo Frames & Personalized Art"
     ],
-    description: "Browse our selection of handcrafted ceramic pieces, from traditional blue pottery to contemporary designs. Each piece is carefully crafted by skilled artisans using time-honored techniques."
+    description: "Find the perfect personalized gift for your loved ones."
   },
   jewellery: {
     title: "Jewellery",
     sidebar: [
-      "All Jewellery",
-      "Silver Jewellery",
-      "Tribal Jewellery",
-      "Beaded Jewellery",
-      "Traditional Designs",
-      "Contemporary Pieces"
+      "Necklaces",
+      "Earrings",
+      "Bracelets",
+      "Rings"
     ],
-    description: "Adorn yourself with our collection of handcrafted jewellery pieces. From intricate silver filigree work to colorful beaded designs, each piece is a testament to the skill and creativity of our artisans."
+    description: "Adorn yourself with our exquisite jewellery collection."
   },
-  wooden: {
-    title: "Wooden Crafts",
+  toys: {
+    title: "Toys",
     sidebar: [
-      "All Wooden Crafts",
-      "Furniture",
-      "Decorative Items",
-      "Kitchen Accessories",
-      "Toys",
-      "Wall Art"
+      "Action Figures",
+      "Educational Toys",
+      "Stuffed Animals",
+      "Puzzles"
     ],
-    description: "Discover our collection of handcrafted wooden items, from intricately carved boxes to beautiful furniture pieces. Each item showcases the exceptional skill and craftsmanship of our woodworkers."
+    description: "Explore our fun and educational toys for children."
   },
-  clay: {
-    title: "Clay Items",
+  'bath-beauty': {
+    title: "Bath & Beauty",
     sidebar: [
-      "All Clay Items",
-      "Terracotta",
-      "Pottery",
-      "Decorative Items",
-      "Functional Items",
-      "Sculptures"
+      "Handmade Soaps",
+      "Skincare Products",
+      "Haircare Products",
+      "Aromatherapy & Essential Oils"
     ],
-    description: "Explore our range of handcrafted clay products, from traditional terracotta items to contemporary designs. Each piece is carefully crafted by skilled artisans using age-old techniques."
+    description: "Pamper yourself with our natural bath and beauty products."
   },
-  decor: {
-    title: "Handmade Decor",
+  art: {
+    title: "Art",
     sidebar: [
-      "All Decor",
-      "Wall Hangings",
-      "Home Accessories",
-      "Textiles",
-      "Baskets & Storage",
-      "Seasonal Decor"
+      "Paintings & Drawings",
+      "Sculptures",
+      "Handmade Prints",
+      "Handcrafted Cards & Stationery"
     ],
-    description: "Transform your space with our collection of handcrafted home decor items. From macrame wall hangings to hand-embroidered cushion covers, each piece adds a unique touch to your home."
+    description: "Discover unique art pieces created by talented artisans."
+  },
+  accessories: {
+    title: "Accessories",
+    sidebar: [
+      "Bags & Purses",
+      "Footwear",
+      "Hats & Hair Accessories"
+    ],
+    description: "Complete your look with our stylish accessories."
   }
 };
 

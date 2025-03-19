@@ -25,13 +25,54 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Product category is required'],
-    enum: ['art', 'clothing', 'ceramics', 'jewellery', 'wooden', 'clay', 'decor'],
+    enum: [
+      'home-living', 
+      'clothing', 
+      'handmade-gifts', 
+      'jewellery', 
+      'toys', 
+      'bath-beauty', 
+      'art', 
+      'accessories'
+    ],
     lowercase: true
   },
   subcategory: {
     type: String,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    enum: [
+      'home-decor', 
+      'bedding-and-pillows', 
+      'kitchen-dining', 
+      'storage-organization',
+      'shirt', 
+      'saree', 
+      'kurthi-sets', 
+      'pants', 
+      'dhoti', 
+      'dupatta',
+      'custom-nameplates', 
+      'engraved-jewelry', 
+      'handmade-greeting-cards', 
+      'photo-frames', 
+      'necklaces', 
+      'earrings', 
+      'bracelets', 
+      'rings',
+      'handmade-soaps', 
+      'skincare-products', 
+      'haircare-products', 
+      'aromatherapy', 
+      'paintings', 
+      'sculptures', 
+      'handmade-prints', 
+      'handcrafted-cards', 
+      'bags', 
+      'purses', 
+      'footwear', 
+      'hats'
+    ]
   },
   tag: {
     type: String,
