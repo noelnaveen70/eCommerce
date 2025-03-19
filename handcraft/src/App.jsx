@@ -23,6 +23,7 @@ import ChatPage from "./components/Navbar/Chatbox";
 import ForgetPassword from "./components/Login/Forget";
 import Checkout from "./components/Checkout/Checkout";
 import ProductPage from "./components/Pro/ProductPage";
+import ProductDetails from "./components/Pro/ProductDetails";
 
 const App = () => {
   const [orderPopup, setOrderPopup] = React.useState(false);
@@ -71,6 +72,7 @@ const App = () => {
         
         {/* New unified product routes */}
         <Route path="/products/:category" element={<ProductPage />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
         {/* Legacy routes for backward compatibility */}
         <Route path="/art" element={<ProductPage />} />
         <Route path="/clothing" element={<ProductPage />} />
