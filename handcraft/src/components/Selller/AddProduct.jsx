@@ -21,6 +21,7 @@ const AddProduct = () => {
     price: "",
     description: "",
     category: "",
+    subcategory: "",
     tag: "",
     stock: 10,
     image: null
@@ -31,6 +32,8 @@ const AddProduct = () => {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [snackbar, setSnackbar] = useState({ show: false, message: "", type: "success" });
+  const [subcategories, setSubcategories] = useState([]);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
 
   // Categories from the product model
   const categories = [
@@ -43,14 +46,58 @@ const AddProduct = () => {
     { value: "decor", label: "Decor" }
   ];
 
+  // Preconfigured subcategories for each category
+  const defaultSubcategories = {
+    art: ["Paintings", "Sculptures", "Folk Art", "Traditional Art", "Contemporary Art"],
+    clothing: ["Kurtas", "Sarees", "Dupattas", "Handwoven Fabrics", "Embroidered Apparel"],
+    ceramics: ["Pottery", "Vases", "Tableware", "Decorative Items", "Blue Pottery"],
+    jewellery: ["Silver Jewellery", "Tribal Jewellery", "Beaded Jewellery", "Traditional Designs", "Contemporary Pieces"],
+    wooden: ["Furniture", "Decorative Items", "Kitchen Accessories", "Toys", "Wall Art"],
+    clay: ["Terracotta", "Pottery", "Decorative Items", "Functional Items", "Sculptures"],
+    decor: ["Wall Hangings", "Home Accessories", "Textiles", "Baskets & Storage", "Seasonal Decor"]
+  };
+
   // Tags from the product model
   const tags = [
-    { value: "", label: "None" },
     { value: "New", label: "New" },
     { value: "Bestseller", label: "Bestseller" },
     { value: "Trending", label: "Trending" },
     { value: "Limited", label: "Limited Edition" }
   ];
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    if (formData.category) {
+      fetchSubcategories(formData.category);
+    } else {
+      setSubcategories([]);
+      // Reset subcategory when category is cleared
+      setFormData(prev => ({ ...prev, subcategory: "" }));
+    }
+  }, [formData.category]);
+
+  // Fetch subcategories from API
+  const fetchSubcategories = async (category) => {
+    setLoadingSubcategories(true);
+    try {
+      const response = await axiosInstance.get(`/api/products/categories/${category}/subcategories`);
+      
+      if (response.data.success && response.data.subcategories.length > 0) {
+        // Filter out any null values
+        const filteredSubcategories = response.data.subcategories.filter(subcat => subcat);
+        setSubcategories(filteredSubcategories);
+      } else {
+        // If no subcategories found in database, use default ones
+        setSubcategories(defaultSubcategories[category] || []);
+      }
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      // Fallback to default subcategories
+      setSubcategories(defaultSubcategories[category] || []);
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  };
 
   // Show snackbar notification
   const showSnackbar = (message, type = "success") => {
@@ -156,6 +203,8 @@ const AddProduct = () => {
     if (!formData.price || formData.price <= 0) newErrors.price = "Valid price is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
     if (!formData.category) newErrors.category = "Category is required";
+    if (!formData.subcategory) newErrors.subcategory = "Subcategory is required";
+    if (!formData.tag) newErrors.tag = "Tag is required";
     if (!formData.stock || formData.stock < 0) newErrors.stock = "Valid stock quantity is required";
     if (!formData.image) newErrors.image = "Product image is required";
     
@@ -188,6 +237,7 @@ const AddProduct = () => {
       productData.append("price", formData.price);
       productData.append("description", formData.description);
       productData.append("category", formData.category);
+      productData.append("subcategory", formData.subcategory);
       productData.append("tag", formData.tag);
       productData.append("stock", formData.stock);
       productData.append("image", formData.image);
@@ -304,23 +354,61 @@ const AddProduct = () => {
                   )}
                 </div>
                 
+                {/* Subcategory - Only show when category is selected */}
+                {formData.category && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Subcategory*
+                    </label>
+                    <select
+                      name="subcategory"
+                      value={formData.subcategory}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${errors.subcategory ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white`}
+                      disabled={loadingSubcategories}
+                      required
+                    >
+                      <option value="">Select a subcategory</option>
+                      {loadingSubcategories ? (
+                        <option disabled>Loading subcategories...</option>
+                      ) : (
+                        subcategories.map((subcategory, index) => (
+                          <option key={index} value={subcategory ? subcategory.toLowerCase() : ''}>
+                            {typeof subcategory === 'string' 
+                              ? subcategory 
+                              : subcategory?.name || subcategory?.value || subcategory || ''}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    {errors.subcategory && (
+                      <p className="mt-1 text-sm text-red-500">{errors.subcategory}</p>
+                    )}
+                  </div>
+                )}
+                
                 {/* Tag */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tag
+                    Tag*
                   </label>
                   <select
                     name="tag"
                     value={formData.tag}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-3 py-2 border ${errors.tag ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white`}
+                    required
                   >
+                    <option value="">Select a tag</option>
                     {tags.map(tag => (
                       <option key={tag.value} value={tag.value}>
                         {tag.label}
                       </option>
                     ))}
                   </select>
+                  {errors.tag && (
+                    <p className="mt-1 text-sm text-red-500">{errors.tag}</p>
+                  )}
                 </div>
                 
                 {/* Stock */}

@@ -3,7 +3,6 @@ import { IoMdSearch } from "react-icons/io";
 import {
   FaShoppingCart,
   FaLock,
-  FaCaretDown,
   FaBars,
   FaTimes,
   FaUserShield,
@@ -23,25 +22,8 @@ const scrollToFooter = () => {
   }
 };
 
-const Menu = [
-  { id: 1, name: "Home", link: "/#" },
-  { id: 2, name: "About Us", link: "/#about" },
-  { id: 3, name: "Contact", action: scrollToFooter }, // Smooth scroll
-];
-
-const ProductCategories = [
-  { id: 1, name: "Art", link: "/products/art" },
-  { id: 2, name: "Clothing", link: "/products/clothing" },
-  { id: 3, name: "Ceramics", link: "/products/ceramics" },
-  { id: 4, name: "Jewellery", link: "/products/jewellery" },
-  { id: 5, name: "Wooden Crafts", link: "/products/wooden" },
-  { id: 6, name: "Clay Items", link: "/products/clay" },
-  { id: 7, name: "Handmade Decor", link: "/products/decor" },
-];
-
 const Navbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(2);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
@@ -76,11 +58,6 @@ const Navbar = () => {
     navigate('/');
   };
 
-  const handleCategoryClick = (link) => {
-    navigate(link);
-    setDropdownOpen(false);
-  };
-
   return (
     <div className="relative z-50">
       <div className="shadow-md bg-white dark:bg-slate-800 dark:text-white duration-200">
@@ -103,45 +80,6 @@ const Navbar = () => {
             </div>
 
             <div className="hidden sm:flex items-center gap-6">
-              <ul className="flex gap-6">
-                {Menu.map((item) => (
-                  <li key={item.id}>
-                    {item.action ? (
-                      <button onClick={item.action} className="hover:text-primary duration-200">
-                        {item.name}
-                      </button>
-                    ) : (
-                      <a href={item.link} className="hover:text-primary duration-200">
-                        {item.name}
-                      </a>
-                    )}
-                  </li>
-                ))}
-
-                <li className="relative">
-                  <button
-                    className="flex items-center gap-1 hover:text-primary"
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                  >
-                    Products <FaCaretDown />
-                  </button>
-                  {dropdownOpen && (
-                    <ul className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-800 shadow-md rounded-lg p-2 z-50">
-                      {ProductCategories.map((category) => (
-                        <li key={category.id} className="py-1">
-                          <button 
-                            onClick={() => handleCategoryClick(category.link)} 
-                            className="hover:text-primary block px-2 w-full text-left"
-                          >
-                            {category.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              </ul>
-
               <Link to="/cart" className="flex items-center gap-2 hover:text-primary">
                 <FaShoppingCart /> Cart
               </Link>
@@ -191,46 +129,6 @@ const Navbar = () => {
       {mobileMenu && (
         <div className="sm:hidden bg-white dark:bg-slate-800 p-4 block z-50 absolute w-full left-0 top-full shadow-md">
           <ul className="flex flex-col gap-4">
-            {Menu.map((item) => (
-              <li key={item.id}>
-                {item.action ? (
-                  <button onClick={item.action} className="inline-block px-4 hover:text-primary duration-200">
-                    {item.name}
-                  </button>
-                ) : (
-                  <a href={item.link} className="inline-block px-4 hover:text-primary duration-200">
-                    {item.name}
-                  </a>
-                )}
-              </li>
-            ))}
-
-            <li className="px-4">
-              <button 
-                className="flex items-center gap-1 hover:text-primary mb-2"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                Products <FaCaretDown />
-              </button>
-              {dropdownOpen && (
-                <ul className="pl-4 space-y-2 mt-1">
-                  {ProductCategories.map((category) => (
-                    <li key={category.id}>
-                      <button 
-                        onClick={() => {
-                          handleCategoryClick(category.link);
-                          setMobileMenu(false);
-                        }} 
-                        className="hover:text-primary block w-full text-left"
-                      >
-                        {category.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-
             <li>
               <Link to="/cart" className="flex items-center gap-2 px-4 hover:text-primary">
                 <FaShoppingCart /> Cart

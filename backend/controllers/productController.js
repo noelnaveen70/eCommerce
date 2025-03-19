@@ -33,6 +33,7 @@ exports.getAllProducts = async (req, res) => {
   try {
     const { 
       category, 
+      subcategory,
       sort = 'createdAt', 
       order = 'desc', 
       page = 1, 
@@ -48,6 +49,10 @@ exports.getAllProducts = async (req, res) => {
     
     if (category) {
       filter.category = category.toLowerCase();
+    }
+    
+    if (subcategory) {
+      filter.subcategory = subcategory.toLowerCase();
     }
     
     if (tag) {
@@ -146,6 +151,20 @@ exports.createProduct = async (req, res) => {
     // Add seller ID from authenticated user
     req.body.seller = req.user._id;
     
+    // If subcategory is provided but empty, set to null
+    if (req.body.subcategory === '') {
+      req.body.subcategory = null;
+    }
+    
+    // Convert category and subcategory to lowercase
+    if (req.body.category) {
+      req.body.category = req.body.category.toLowerCase();
+    }
+    
+    if (req.body.subcategory) {
+      req.body.subcategory = req.body.subcategory.toLowerCase();
+    }
+    
     // If file was uploaded, upload it to Cloudinary
     if (req.file) {
       try {
@@ -158,8 +177,9 @@ exports.createProduct = async (req, res) => {
           resource_type: 'image'
         });
         
-        // Add the Cloudinary URL to the product data
+        // Add the Cloudinary URL and public ID to the product data
         req.body.image = result.secure_url;
+        req.body.cloudinary_id = result.public_id;
         console.log('Image uploaded to Cloudinary:', result.secure_url);
       } catch (cloudinaryError) {
         console.error('Cloudinary upload error:', cloudinaryError);
@@ -216,9 +236,34 @@ exports.updateProduct = async (req, res) => {
       });
     }
     
+    // If subcategory is provided but empty, set to null
+    if (req.body.subcategory === '') {
+      req.body.subcategory = null;
+    }
+    
+    // Convert category and subcategory to lowercase
+    if (req.body.category) {
+      req.body.category = req.body.category.toLowerCase();
+    }
+    
+    if (req.body.subcategory) {
+      req.body.subcategory = req.body.subcategory.toLowerCase();
+    }
+    
     // If file was uploaded, update the image on Cloudinary
     if (req.file) {
       try {
+        // Delete previous image from Cloudinary if it exists
+        if (product.cloudinary_id) {
+          try {
+            await cloudinary.uploader.destroy(product.cloudinary_id);
+            console.log('Previous image deleted from Cloudinary:', product.cloudinary_id);
+          } catch (destroyError) {
+            console.error('Error deleting previous image from Cloudinary:', destroyError);
+            // Continue with the update even if deletion fails
+          }
+        }
+        
         // Convert buffer to data URL
         const dataURI = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
         
@@ -228,8 +273,9 @@ exports.updateProduct = async (req, res) => {
           resource_type: 'image'
         });
         
-        // Add the Cloudinary URL to the product data
+        // Add the Cloudinary URL and public ID to the product data
         req.body.image = result.secure_url;
+        req.body.cloudinary_id = result.public_id;
         console.log('Updated image uploaded to Cloudinary:', result.secure_url);
       } catch (cloudinaryError) {
         console.error('Cloudinary upload error during update:', cloudinaryError);
@@ -286,8 +332,17 @@ exports.deleteProduct = async (req, res) => {
       });
     }
     
-    // If using Cloudinary, no need to delete file from local storage
-    // The image URL will be preserved in Cloudinary for your records
+    // Delete image from Cloudinary if it exists
+    if (product.cloudinary_id) {
+      try {
+        await cloudinary.uploader.destroy(product.cloudinary_id);
+        console.log('Image deleted from Cloudinary:', product.cloudinary_id);
+      } catch (cloudinaryError) {
+        console.error('Error deleting image from Cloudinary:', cloudinaryError);
+        // Continue with product deletion even if image deletion fails
+        // This prevents orphaned products if Cloudinary deletion fails
+      }
+    }
     
     // Delete the product
     await product.deleteOne();
@@ -406,6 +461,41 @@ exports.getProductCategories = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching categories',
+      error: error.message
+    });
+  }
+};
+
+// Get subcategories for a specific category
+exports.getProductSubcategories = async (req, res) => {
+  try {
+    const { category } = req.params;
+    
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Category parameter is required'
+      });
+    }
+    
+    const subcategories = await Product.distinct('subcategory', { 
+      category: category.toLowerCase(),
+      subcategory: { $exists: true, $ne: null, $ne: "" }  // Exclude null or empty subcategories
+    });
+    
+    // Filter out any null or undefined values that might have slipped through
+    const filteredSubcategories = subcategories.filter(subcat => subcat !== null && subcat !== undefined);
+    
+    res.status(200).json({
+      success: true,
+      category,
+      subcategories: filteredSubcategories
+    });
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching subcategories',
       error: error.message
     });
   }

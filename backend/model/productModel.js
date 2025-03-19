@@ -19,10 +19,18 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Product image is required']
   },
+  cloudinary_id: {
+    type: String
+  },
   category: {
     type: String,
     required: [true, 'Product category is required'],
     enum: ['art', 'clothing', 'ceramics', 'jewellery', 'wooden', 'clay', 'decor'],
+    lowercase: true
+  },
+  subcategory: {
+    type: String,
+    trim: true,
     lowercase: true
   },
   tag: {

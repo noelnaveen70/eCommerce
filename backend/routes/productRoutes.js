@@ -10,12 +10,14 @@ const {
   addProductRating,
   getSellerProducts,
   getProductCategories,
+  getProductSubcategories,
   uploadProductImage
 } = require('../controllers/productController');
 
 // Public routes
 router.get('/', getAllProducts);
 router.get('/categories', getProductCategories);
+router.get('/categories/:category/subcategories', getProductSubcategories);
 
 // Protected routes
 router.get('/seller/:sellerId?', verifyToken, getSellerProducts);

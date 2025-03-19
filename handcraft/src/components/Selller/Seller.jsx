@@ -56,11 +56,15 @@ const SellerDashboard = () => {
     name: "",
     price: "",
     category: "",
+    subcategory: "",
+    tag: "",
     stock: "",
     image: ""
   });
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
   const [snackbar, setSnackbar] = useState({ show: false, message: "", type: "success" });
+  // State for tracking selected subcategories
+  const [availableSubcategories, setAvailableSubcategories] = useState([]);
 
   // Show snackbar notification
   const showSnackbar = (message, type = "success") => {
@@ -185,6 +189,15 @@ const SellerDashboard = () => {
     fetchSellerProducts();
   }, [timeRange]);
 
+  // Update available subcategories when category changes
+  useEffect(() => {
+    if (productFormData.category) {
+      setAvailableSubcategories(getSubcategories(productFormData.category));
+    } else {
+      setAvailableSubcategories([]);
+    }
+  }, [productFormData.category]);
+
   // Chart data preparation
   const salesGrowthData = {
     labels: dashboardData.salesGrowth.map((entry) => entry.date),
@@ -249,6 +262,8 @@ const SellerDashboard = () => {
       name: "",
       price: "",
       category: "",
+      subcategory: "",
+      tag: "",
       stock: "",
       image: ""
     });
@@ -258,13 +273,20 @@ const SellerDashboard = () => {
   // Open modal for editing an existing product
   const handleEditProduct = (product) => {
     setCurrentProduct(product);
+    
+    // Ensure all fields are properly set for editing
     setProductFormData({
-      name: product.name,
-      price: product.price,
-      category: product.category,
-      stock: product.stock,
-      image: product.image || ""
+      name: product.name || "",
+      price: product.price || 0,
+      category: product.category || "",
+      subcategory: product.subcategory || "",
+      tag: product.tag || "",
+      stock: product.stock || 0,
+      image: product.image || "",
+      // Clear any previous image preview
+      imagePreview: null
     });
+    
     setShowProductModal(true);
   };
 
@@ -309,12 +331,42 @@ const SellerDashboard = () => {
     fileInputRef.current.click();
   };
 
+  // Define subcategories by category
+  const subcategoriesByCategory = {
+    art: ["Paintings", "Sculptures", "Folk Art", "Traditional Art", "Contemporary Art"],
+    clothing: ["Kurtas", "Sarees", "Dupattas", "Handwoven Fabrics", "Embroidered Apparel"],
+    ceramics: ["Pottery", "Vases", "Tableware", "Decorative Items", "Blue Pottery"],
+    jewellery: ["Silver Jewellery", "Tribal Jewellery", "Beaded Jewellery", "Traditional Designs", "Contemporary Pieces"],
+    wooden: ["Furniture", "Decorative Items", "Kitchen Accessories", "Toys", "Wall Art"],
+    clay: ["Terracotta", "Pottery", "Decorative Items", "Functional Items", "Sculptures"],
+    decor: ["Wall Hangings", "Home Accessories", "Textiles", "Baskets & Storage", "Seasonal Decor"]
+  };
+
+  // Define product tags
+  const productTags = [
+    { value: "New", label: "New" },
+    { value: "Bestseller", label: "Bestseller" },
+    { value: "Trending", label: "Trending" },
+    { value: "Limited", label: "Limited Edition" }
+  ];
+
+  // Helper to get subcategories for the selected category
+  const getSubcategories = (category) => {
+    if (!category) return [];
+    
+    // Convert to lowercase for consistency with model
+    const normalizedCategory = category.toLowerCase();
+    return subcategoriesByCategory[normalizedCategory] || [];
+  };
+
   // Handle product form submission
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form
-    if (!productFormData.name || !productFormData.price || !productFormData.category || productFormData.stock === "") {
+    if (!productFormData.name || !productFormData.price || !productFormData.category || 
+        !productFormData.subcategory || !productFormData.tag || productFormData.stock === undefined || 
+        productFormData.stock === "" || !productFormData.image) {
       alert("Please fill all required fields");
       return;
     }
@@ -326,6 +378,8 @@ const SellerDashboard = () => {
       formData.append('name', productFormData.name);
       formData.append('price', productFormData.price);
       formData.append('category', productFormData.category);
+      formData.append('subcategory', productFormData.subcategory || '');
+      formData.append('tag', productFormData.tag || '');
       formData.append('stock', productFormData.stock);
       
       // If image is a File object, append it to formData
@@ -357,6 +411,8 @@ const SellerDashboard = () => {
               name: productFormData.name,
               price: productFormData.price,
               category: productFormData.category,
+              subcategory: productFormData.subcategory,
+              tag: productFormData.tag,
               stock: productFormData.stock,
               image: response.data.product.image || p.image,
               inventoryStatus: productFormData.stock > 10 ? "In Stock" : productFormData.stock > 0 ? "Low Stock" : "Out of Stock"
@@ -384,6 +440,8 @@ const SellerDashboard = () => {
             name: response.data.product.name,
             price: response.data.product.price,
             category: response.data.product.category,
+            subcategory: response.data.product.subcategory,
+            tag: response.data.product.tag,
             stock: response.data.product.stock || 0,
             sold: 0,
             image: response.data.product.image,
@@ -483,8 +541,13 @@ const SellerDashboard = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     
+    // Handle File objects (when updating with a new image)
+    if (imagePath instanceof File) {
+      return URL.createObjectURL(imagePath);
+    }
+    
     // If it's already a full URL or data URL
-    if (imagePath.startsWith('http') || imagePath.startsWith('data:')) {
+    if (typeof imagePath === 'string' && (imagePath.startsWith('http') || imagePath.startsWith('data:'))) {
       return imagePath;
     }
     
@@ -910,17 +973,62 @@ const SellerDashboard = () => {
                     <select
                       name="category"
                       value={productFormData.category}
-                      onChange={handleProductInputChange}
+                      onChange={(e) => {
+                        const newCategory = e.target.value;
+                        // Reset subcategory when category changes
+                        setProductFormData({
+                          ...productFormData,
+                          category: newCategory,
+                          subcategory: "" // Reset subcategory when category changes
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                       required
                     >
                       <option value="">Select a category</option>
-                      <option value="Clothing">Clothing</option>
-                      <option value="Accessories">Accessories</option>
-                      <option value="Home Decor">Home Decor</option>
-                      <option value="Art">Art</option>
-                      <option value="Jewelry">Jewelry</option>
-                      <option value="Kitchen">Kitchen</option>
+                      <option value="art">Art</option>
+                      <option value="clothing">Clothing</option>
+                      <option value="ceramics">Ceramics</option>
+                      <option value="jewellery">Jewellery</option>
+                      <option value="wooden">Wooden Crafts</option>
+                      <option value="clay">Clay Items</option>
+                      <option value="decor">Handmade Decor</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Subcategory*
+                    </label>
+                    <select
+                      name="subcategory"
+                      value={productFormData.subcategory}
+                      onChange={handleProductInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                      required
+                    >
+                      <option value="">Select a subcategory</option>
+                      {availableSubcategories.map((subcategory, index) => (
+                        <option key={index} value={subcategory ? subcategory.toLowerCase() : ''}>
+                          {subcategory || ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tag*
+                    </label>
+                    <select
+                      name="tag"
+                      value={productFormData.tag}
+                      onChange={handleProductInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                      required
+                    >
+                      <option value="">Select a tag</option>
+                      {productTags.map((tag, index) => (
+                        <option key={index} value={tag.value}>{tag.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -945,7 +1053,7 @@ const SellerDashboard = () => {
                       onClick={handleUploadClick}
                       className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md hover:border-indigo-500 dark:hover:border-indigo-600 cursor-pointer transition-colors"
                     >
-                      {(productFormData.imagePreview || productFormData.image) ? (
+                      {productFormData.imagePreview || productFormData.image ? (
                         <div className="relative w-full">
                           <div className="flex items-center justify-center bg-gray-50 dark:bg-gray-700/30 rounded-md mb-2 p-2">
                             <img 
